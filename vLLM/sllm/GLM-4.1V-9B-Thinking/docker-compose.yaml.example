@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  GLM-4-1V-9B-Thinking:
+    container_name: GLM-4.1V-9B-Thinking
+    restart: always
+    image: vllm/vllm-openai:v0.11.0
+    ipc: host
+    volumes:
+      - /data/Project/.cache/huggingface:/root/.cache/huggingface
+    command:
+      [
+        "--model", "zai-org/GLM-4.1V-9B-Thinking",
+        "--served-model-name", "GLM-4.1V-9B-Thinking",
+        "--gpu-memory-utilization", "0.65",
+        "--max-model-len", "16384",
+        "--reasoning-parser", "deepseek_r1",
+        "--trust-remote-code",
+        "--limit-mm-per-prompt", "{\"image\": 3, \"video\": 1}",
+        "--api-key", "S+nR5mYhX52exXsXbANsYnDYS7VgliJK5xmTsKHCrB0="
+      ]
+    ports:
+      - 8004:8000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
+
+networks:
+  default:
+    name: sl-sad-sdd-service-network
+    external: true
