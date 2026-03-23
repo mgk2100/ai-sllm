@@ -1,0 +1,84 @@
+# ============================
+# vLLM GPT-OSS 120B - RTX 6000 Pro Blackwell x2
+# ============================
+
+services:
+  vllm-gpt-oss-120b:
+    image: vllm/vllm-openai:v0.14.0
+    container_name: vllm-gpt-oss-120b-tp2
+    restart: unless-stopped
+    runtime: nvidia
+    
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0,1
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - HF_HOME=/root/.cache
+      - HF_HUB_CACHE=/root/.cache/hub
+      
+      # SM120 호환성
+      - VLLM_MXFP4_USE_MARLIN=1
+      - VLLM_USE_FLASHINFER_MOE_FP4=0
+      - VLLM_USE_FLASHINFER_MOE_MXFP4_MXFP8=0
+      - VLLM_USE_V1=1
+      
+      # NCCL
+      - NCCL_IB_DISABLE=1
+      - NCCL_P2P_DISABLE=0
+      - NCCL_SHM_DISABLE=0
+      - NCCL_NVLS_ENABLE=0
+      
+      # 성능
+      - OMP_NUM_THREADS=8
+      - SAFETENSORS_FAST_GPU=1
+
+    ports:
+      - "8000:8000"
+    volumes:
+      - /data/Project/.cache:/root/.cache
+    ipc: host
+    shm_size: "64g"
+    ulimits:
+      memlock: -1
+      stack: 67108864
+      nofile:
+        soft: 65536
+        hard: 65536
+
+    command:
+      - "--model"
+      - "openai/gpt-oss-120b"
+      - "--served-model-name"
+      - "openai/gpt-oss-120b"
+      - "--trust-remote-code"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8000"
+      - "--api-key"
+      - "S+nR5mYhX52exXsXbANsYnDYS7VgliJK5xmTsKHCrB0="
+      - "--tensor-parallel-size"
+      - "2"
+      - "--gpu-memory-utilization"
+      - "0.90"
+      - "--kv-cache-dtype"
+      - "fp8"
+      - "--max-num-batched-tokens"
+      - "16384"
+      - "--max-num-seqs"
+      - "128"
+      - "--max-model-len"
+      - "131072"
+      - "--async-scheduling"
+      - "--enable-chunked-prefill"
+      - "--no-enable-prefix-caching"
+      - "--max-cudagraph-capture-size"
+      - "2048"
+      - "--compilation-config"
+      - '{"pass_config":{"fuse_allreduce_rms":true,"eliminate_noops":true}}'
+      - "--stream-interval"
+      - "20"
+      # ✅ Tool Calling (올바른 설정)
+      - "--tool-call-parser"
+      - "openai"
+      - "--enable-auto-tool-choice"
+      - "--disable-log-requests"
